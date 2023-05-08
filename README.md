@@ -97,12 +97,20 @@ embedder = SentenceTransformer('paraphrase-MiniLM-L6-v2') # 90MB model
 
 def embed(sentence):
     # important to convert to list so json.dumps works
-    return embedder.encode(sentence).tolist() 
+    return embedder.encode(sentence).tolist()
+
+def batch_embed(sentences):
+    for sentence in sentences:
+        yield embed(sentence).tolist()
 ```
 
 ```typescript
 interface ML {
+    // Return type will be Promise<number[]>
     embed(text: string): number[];
+
+    // Return type stays Subject, so values of `yield` will be streamed until the function is finished
+    batch_embed(text: string[]): Subject<number[]>;
 }
 
 class PythonController {

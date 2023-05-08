@@ -1,9 +1,8 @@
 import {ChildProcess, spawn} from "child_process";
-import {dirname, isAbsolute, join} from "path";
+import {isAbsolute, join} from "path";
 import {findParentPath} from "@deepkit/app";
 import {ConsoleTransport, Logger} from "@deepkit/logger";
-import {getCurrentFileName} from "@deepkit/core";
-import {deserializeFunction, ReceiveType, ReflectionClass, resolveReceiveType} from "@deepkit/type";
+import {deserializeFunction, ReceiveType, ReflectionClass, ReflectionKind, resolveReceiveType, Type, TypeClass} from "@deepkit/type";
 import {Subject} from "rxjs";
 import {PyBridgeConfig} from "./config";
 
@@ -39,10 +38,8 @@ try:
             # if result is a generator, iterate over it
             if isinstance(result, Generator):
                 for r in result:
-                    debug('yield', r)
                     message = {'id': p['id'], 'yield': r}
                     print(json.dumps(message) + '\\n', file=orig_stdout, flush=True)
-                debug("done", result)
                 print(json.dumps({'id': p['id']}) + '\\n', file=orig_stdout, flush=True)
             else:
                 print(json.dumps({'id': p['id'], 'yield': result}) + '\\n', file=orig_stdout, flush=True)
@@ -56,6 +53,10 @@ try:
 except KeyboardInterrupt:
     sys.exit(0)
 `;
+
+function isSubjectType(type: Type): type is TypeClass & { typeArguments: [Type] } {
+    return Boolean(type.kind === ReflectionKind.class && type.classType === Subject && type.typeArguments);
+}
 
 export class Controller {
     process: ChildProcess;
@@ -80,7 +81,6 @@ export class Controller {
         if (moduleName.endsWith('.py')) {
             load = `import sys; sys.path.append('${cwd}'); import ${moduleName.replace('.py', '')} as module;`;
         }
-        logger.log(`Python load: ${load}`);
 
         this.process = spawn(python, ['-c', hook.replace('{{__load__}}', load)], {
             stdio: ['pipe', 'pipe', process.stderr],
@@ -120,6 +120,9 @@ export class Controller {
         const messageId = this.messageId++;
 
         type = resolveReceiveType(type);
+        if (isSubjectType(type)) {
+            type = type.typeArguments[0];
+        }
         const subject = new Subject<any>();
         const deserializer = deserializeFunction(undefined, undefined, undefined, type);
 
@@ -144,7 +147,7 @@ export class Controller {
     }
 }
 
-type PromisifyFn<T extends ((...args: any[]) => any)> = (...args: Parameters<T>) => ReturnType<T> extends Promise<any> ? ReturnType<T> : Promise<ReturnType<T>>;
+type PromisifyFn<T extends ((...args: any[]) => any)> = (...args: Parameters<T>) => ReturnType<T> extends Subject<infer R> ? ReturnType<T> : ReturnType<T> extends Promise<any> ? ReturnType<T> : Promise<ReturnType<T>>;
 export type RemoteController<T> = {
     [P in keyof T]: T[P] extends (...args: any[]) => any ? PromisifyFn<T[P]> : never
 };
@@ -174,7 +177,8 @@ export class PyBridge {
 
                 return (...args: any[]) => {
                     const returnType = reflectionClass.getMethod(name).getReturnType();
-                    return controller.send(name, args, returnType).toPromise();
+                    const subject = controller.send(name, args, returnType);
+                    return isSubjectType(returnType) ? subject : subject.toPromise();
                 }
             }
         }) as any;
