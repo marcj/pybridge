@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "./dist/cjs",
+    "strict": true,
+    "sourceMap": true,
+    "declaration": false,
+    "experimentalDecorators": true,
+    "moduleResolution": "node",
+    "target": "es2018",
+    "module": "CommonJS",
+    "preserveSymlinks": true,
+    "esModuleInterop": true
+  },
+  "reflection": true,
+  "include": [
+    "index.ts",
+    "src"
+  ]
+}

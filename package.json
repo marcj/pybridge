@@ -1,0 +1,53 @@
+{
+  "name": "pybridge",
+  "version": "1.0.0",
+  "description": "TypeScript library for Python interop",
+  "type": "commonjs",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/cjs/index.d.ts",
+      "require": "./dist/cjs/index.js",
+      "default": "./dist/esm/index.js"
+    }
+  },
+  "scripts": {
+    "test": "jest",
+    "build": "echo '{\"type\": \"module\"}' > ./dist/esm/package.json && tsc && tsc --project tsconfig.esm.json"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": "https://github.com/marcj/pybridge",
+  "author": "Marc J. Schmidt <marc@marcjschmidt.de>",
+  "license": "MIT",
+  "devDependencies": {
+    "@deepkit/type-compiler": "^1.0.1-alpha.95",
+    "@types/jest": "^29.5.1",
+    "@types/node": "^18.16.5",
+    "jest": "^29.5.0",
+    "rxjs": "^7.8.1",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "@deepkit/app": "^1.0.1-alpha.96",
+    "@deepkit/logger": "^1.0.1-alpha.94",
+    "@deepkit/type": "^1.0.1-alpha.96"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "(.+)\\.js": "$1"
+    },
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/*.spec.ts"
+    ]
+  }
+}
