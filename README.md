@@ -134,6 +134,11 @@ class PythonController {
 const controller = new PythonController(bridge);
 
 const embedding = await controller.ml.embed('hello world');
+const stream = await controller.ml.batch_embed(['lots', 'of', 'sentences']);
+stream.subscribe((embedding) => {
+    console.log('Got embedding', embedding);
+});
+await stream.toPromise(); // wait until stream is finished
 ```
 
 ## Install
