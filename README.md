@@ -4,12 +4,19 @@ A TypeScript library to access your python functions in NodeJS, type-safe and ea
 
 This is especially useful if you want to use machine learning models in NodeJS.
 
+## Features
+
+- Supports all TypeScript types (including generics)
+- Supports generator functions in Python (streaming with RxJS)
+- Python modules and scripts
+- Automatically serializes and deserializes data between NodeJS and Python
+
 ## Use-cases
 
+- Call arbitrary Python functions from NodeJS
 - Use machine learning models in NodeJS
 - Fine-Tune machine learning models from data coming from NodeJS (like Typescript ORMs)
 - Text-Embedding from and to your database managed by NodeJS/TypeScript
-
 
 ## Usage
 
@@ -18,6 +25,7 @@ This is especially useful if you want to use machine learning models in NodeJS.
 ```python
 # File: script.py
 from typing import List
+
 
 def word_sizes(words: List[str]) -> List[int]:
     return [len(word) for word in words]
@@ -81,7 +89,7 @@ interface NLP {
 class PythonController {
     script = this.python.controller<API>('script.py');
     nlp = this.python.controller<NLP>('nlp.py');
-    
+
     constructor(protected python: PyBridge) {
     }
 }
@@ -93,11 +101,14 @@ And then use `PythonController` everywhere.
 
 ```python
 from sentence_transformers import SentenceTransformer
-embedder = SentenceTransformer('paraphrase-MiniLM-L6-v2') # 90MB model
+
+embedder = SentenceTransformer('paraphrase-MiniLM-L6-v2')  # 90MB model
+
 
 def embed(sentence):
     # important to convert to list so json.dumps works
     return embedder.encode(sentence).tolist()
+
 
 def batch_embed(sentences):
     for sentence in sentences:
@@ -142,6 +153,7 @@ npm install --save-dev @deepkit/type-compiler
 Enable Deepkit runtime type reflection:
 
 File: tsconfig.json
+
 ```json
 {
   "compilerOptions": {
@@ -150,3 +162,8 @@ File: tsconfig.json
   "reflection": true
 }
 ```
+
+## How it works
+
+PyBridge starts a Python process and communicates with it via stdin/stdout.
+It uses [Deepkit](https://deepkit.ai) to serialize data between the two processes. 
