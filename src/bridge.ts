@@ -1,16 +1,28 @@
-import {ChildProcess, spawn} from "child_process";
-import {isAbsolute, join} from "path";
-import {findParentPath} from "@deepkit/app";
-import {ConsoleTransport, Logger} from "@deepkit/logger";
-import {deserializeFunction, ReceiveType, ReflectionClass, ReflectionKind, resolveReceiveType, Type, TypeClass} from "@deepkit/type";
-import {Subject} from "rxjs";
-import {PyBridgeConfig} from "./config";
+import { ChildProcess, spawn } from "child_process";
+import { isAbsolute, join } from "path";
+import { findParentPath } from "@deepkit/app";
+import { ConsoleTransport, Logger } from "@deepkit/logger";
+import { deserializeFunction, ReceiveType, ReflectionClass, ReflectionKind, resolveReceiveType, Type, TypeClass } from "@deepkit/type";
+import { Subject } from "rxjs";
+import { PyBridgeConfig } from "./config";
 
 interface RpcMessage {
     id: number;
+    ready?: true;
     result?: any;
     yield?: any;
     error?: string;
+}
+
+function fromCode(code: string): string {
+    return `
+import sys
+import types
+
+module = types.ModuleType('my_module')
+my_code = ${JSON.stringify(code)}
+exec(my_code, module.__dict__)
+`;
 }
 
 const hook: string = `
@@ -63,7 +75,7 @@ export class Controller {
     messageId: number = 0;
     subscribers: { [messageId: number]: (data: RpcMessage) => void } = {};
 
-    constructor(moduleName: string, config: PyBridgeConfig, logger: Logger) {
+    constructor(moduleNameOrCode: string, config: PyBridgeConfig, logger: Logger) {
         let python = config.python;
 
         if (!isAbsolute(python)) {
@@ -75,14 +87,16 @@ export class Controller {
 
         let cwd = config.cwd;
 
-        logger.log(`Start python model for module ${moduleName} via ${python} in ${cwd}`);
+        logger.log(`Start python via ${python} in ${cwd} for ${moduleNameOrCode.replace(/\n/g, '\\n').substring(0, 50)}`);
 
-        let load = `import ${moduleName} as module;`;
-        if (moduleName.endsWith('.py')) {
-            load = `import sys; sys.path.append('${cwd}'); import ${moduleName.replace('.py', '')} as module;`;
+        let load = moduleNameOrCode.includes(' ') ? fromCode(moduleNameOrCode) : `import ${moduleNameOrCode} as module;`;
+        if (moduleNameOrCode.endsWith('.py')) {
+            load = `import sys; sys.path.append('${cwd}'); import ${moduleNameOrCode.replace('.py', '')} as module;`;
         }
 
-        this.process = spawn(python, ['-c', hook.replace('{{__load__}}', load)], {
+        const code = hook.replace('{{__load__}}', load);
+        // console.log(code);
+        this.process = spawn(python, ['-c', code], {
             stdio: ['pipe', 'pipe', process.stderr],
             cwd: cwd,
         });
@@ -128,7 +142,9 @@ export class Controller {
 
         this.subscribers[messageId] = (data) => {
             try {
-                if (data.yield) {
+                if (data.ready) {
+
+                } else if (data.yield) {
                     const v = deserializer(data.yield);
                     subject.next(v);
                 } else if (data.error) {
@@ -141,7 +157,7 @@ export class Controller {
             } catch {
             }
         };
-        this.process.stdin!.write(JSON.stringify({id: messageId, method, args}) + '\n');
+        this.process.stdin!.write(JSON.stringify({ id: messageId, method, args }) + '\n');
 
         return subject;
     }

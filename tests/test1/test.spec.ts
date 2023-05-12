@@ -1,10 +1,10 @@
-import {App} from "@deepkit/app";
-import {PyBridge} from "../../src/bridge";
-import {PyBridgeModule} from "../../src/module";
-import {Subject} from "rxjs";
+import { App } from "@deepkit/app";
+import { PyBridge } from "../../src/bridge";
+import { PyBridgeModule } from "../../src/module";
+import { Subject } from "rxjs";
 
 test('script', async () => {
-    const bridge = new PyBridge({python: 'python3', cwd: __dirname});
+    const bridge = new PyBridge({ python: 'python3', cwd: __dirname });
 
     interface API {
         word_sizes(words: string[]): number[];
@@ -20,7 +20,7 @@ test('script', async () => {
     const values: any[] = [];
     stream.subscribe(v => values.push(v));
     await stream.toPromise();
-    expect(values).toEqual([{type: 'loading'}, {type: 'loaded'}]);
+    expect(values).toEqual([{ type: 'loading' }, { type: 'loaded' }]);
 
     bridge.close();
 });
@@ -42,4 +42,22 @@ test('app', async () => {
     });
 
     await app.run(['test']);
+});
+
+test('script code', async () => {
+    const bridge = new PyBridge({ python: 'python3', cwd: __dirname });
+
+    interface API {
+        embed(text: string): number[];
+    }
+
+    const code = `
+def embed(text):
+    return [len(text)]
+    `;
+
+    const api = bridge.controller<API>(code);
+
+    const result = await api.embed('hello');
+    expect(result).toEqual([5]);
 });
