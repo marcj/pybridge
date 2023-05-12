@@ -141,6 +141,20 @@ stream.subscribe((embedding) => {
 await stream.toPromise(); // wait until stream is finished
 ```
 
+## Python code
+
+Alternatively instead of providing a module name script path, you can also provide a Python code
+directly:
+
+```typescript
+const code = `
+def embed(text):
+    return [len(text)]
+    `;
+
+const controller = python.controller<API>(code);
+```
+
 ## Install
 
 First install pybridge using npm:
