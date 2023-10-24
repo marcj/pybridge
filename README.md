@@ -185,7 +185,7 @@ File: tsconfig.json
 ## How it works
 
 PyBridge starts a Python process and communicates with it via stdin/stdout.
-It uses [Deepkit](https://deepkit.ai) to serialize data between the two processes. 
+It uses [Deepkit](https://deepkit.io) to serialize data between the two processes. 
 
 It's important to type the API controller in TypeScript correctly, so Deepkit can serialize and deserialize the data
 correctly. Make sure it matches the Python function signature.
