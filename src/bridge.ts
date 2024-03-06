@@ -138,7 +138,7 @@ export class Controller {
             type = type.typeArguments[0];
         }
         const subject = new Subject<any>();
-        const deserializer = deserializeFunction(undefined, undefined, undefined, type);
+        const deserializer = deserializeFunction(undefined, undefined, type);
 
         this.subscribers[messageId] = (data) => {
             try {
