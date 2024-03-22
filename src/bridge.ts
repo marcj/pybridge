@@ -71,12 +71,17 @@ function isSubjectType(type: Type): type is TypeClass & { typeArguments: [Type] 
 }
 
 export class Controller {
-    process: ChildProcess;
+    process?: ChildProcess;
     messageId: number = 0;
     subscribers: { [messageId: number]: (data: RpcMessage) => void } = {};
 
-    constructor(moduleNameOrCode: string, config: PyBridgeConfig, logger: Logger) {
-        let python = config.python;
+    constructor(private moduleNameOrCode: string, private config: PyBridgeConfig, private logger: Logger) {
+    }
+
+    ensureProcess(): ChildProcess {
+        if (this.process) return this.process;
+
+        let python = this.config.python;
 
         if (!isAbsolute(python)) {
             const venvBin = findParentPath('venv/bin');
@@ -85,13 +90,13 @@ export class Controller {
             }
         }
 
-        let cwd = config.cwd;
+        let cwd = this.config.cwd;
 
-        logger.log(`Start python via ${python} in ${cwd} for ${moduleNameOrCode.replace(/\n/g, '\\n').substring(0, 50)}`);
+        this.logger.log(`Start python via ${python} in ${cwd} for ${this.moduleNameOrCode.replace(/\n/g, '\\n').substring(0, 50)}`);
 
-        let load = moduleNameOrCode.includes(' ') ? fromCode(moduleNameOrCode) : `import ${moduleNameOrCode} as module;`;
-        if (moduleNameOrCode.endsWith('.py')) {
-            load = `import sys; sys.path.append('${cwd}'); import ${moduleNameOrCode.replace('.py', '')} as module;`;
+        let load = this.moduleNameOrCode.includes(' ') ? fromCode(this.moduleNameOrCode) : `import ${this.moduleNameOrCode} as module;`;
+        if (this.moduleNameOrCode.endsWith('.py')) {
+            load = `import sys; sys.path.append('${cwd}'); import ${this.moduleNameOrCode.replace('.py', '')} as module;`;
         }
 
         const code = hook.replace('{{__load__}}', load);
@@ -101,8 +106,14 @@ export class Controller {
             cwd: cwd,
         });
 
-        process.on('exit', () => {
-            this.process.kill();
+        const onExit = () => {
+            this.process?.kill();
+        }
+
+        process.on('exit', onExit);
+        this.process.on('close', () => {
+            this.process = undefined;
+            process.off('exit', onExit);
         });
 
         const buffer: Buffer[] = [];
@@ -128,9 +139,11 @@ export class Controller {
         }
 
         this.process.stdout!.on('data', read);
+        return this.process;
     }
 
     send<T>(method: string, args: any[], type?: ReceiveType<T>): Subject<T> {
+        const pythonProcess = this.ensureProcess();
         const messageId = this.messageId++;
 
         type = resolveReceiveType(type);
@@ -157,7 +170,7 @@ export class Controller {
             } catch {
             }
         };
-        this.process.stdin!.write(JSON.stringify({ id: messageId, method, args }) + '\n');
+        pythonProcess.stdin!.write(JSON.stringify({ id: messageId, method, args }) + '\n');
 
         return subject;
     }
