@@ -179,22 +179,22 @@ export class Controller {
 type PromisifyFn<T extends ((...args: any[]) => any)> = (...args: Parameters<T>) => ReturnType<T> extends Subject<infer R> ? ReturnType<T> : ReturnType<T> extends Promise<any> ? ReturnType<T> : Promise<ReturnType<T>>;
 export type RemoteController<T> = {
     [P in keyof T]: T[P] extends (...args: any[]) => any ? PromisifyFn<T[P]> : never
-};
+} & Controller;
 
 export class PyBridge {
-    protected controllers: { [name: string]: any } = {};
+    protected controllers: { [name: string]: RemoteController<any> } = {};
 
     constructor(protected config: PyBridgeConfig, protected logger: Logger = new Logger([new ConsoleTransport()])) {
     }
 
     close() {
         for (const controller of Object.values(this.controllers)) {
-            controller.process.kill();
+            controller.process?.kill();
         }
     }
 
     controller<T extends {}>(moduleName: string, type?: ReceiveType<T>): RemoteController<T> {
-        if (this.controllers[moduleName]) return this.controllers[moduleName];
+        if (this.controllers[moduleName]) return this.controllers[moduleName] as RemoteController<T>;
         const controller = new Controller(moduleName, this.config, this.logger);
         if (!type) throw new Error('No controller type T given');
 
