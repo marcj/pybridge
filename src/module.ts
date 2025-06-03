@@ -7,14 +7,14 @@ export class PyBridgeModule extends createModuleClass({
     providers: [
         PyBridge,
     ],
+    listeners: [
+        onAppShutdown.listen((event, python: PyBridge) => {
+            // disconnect all open python processes when app shuts down
+            python.close();
+        })
+    ],
     exports: [
         PyBridge
     ]
 }) {
-    process() {
-        this.addListener(onAppShutdown.listen((event, python: PyBridge) => {
-            // disconnect all open python processes when app shuts down
-            python.close();
-        }));
-    }
 }
