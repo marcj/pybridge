@@ -1,6 +1,6 @@
 {
   "name": "pybridge",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "TypeScript library for Python interop",
   "type": "commonjs",
   "main": "./dist/cjs/index.js",
