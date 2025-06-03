@@ -1,6 +1,6 @@
 {
   "name": "pybridge",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "TypeScript library for Python interop",
   "type": "commonjs",
   "main": "./dist/cjs/index.js",
@@ -36,7 +36,7 @@
     "@types/jest": "^29.5.1",
     "@types/node": "^18.16.5",
     "jest": "^29.5.0",
-    "rxjs": "^7.8.1",
+    "rxjs": "*",
     "ts-jest": "^29.1.0",
     "typescript": "^5.0.4"
   },
@@ -44,6 +44,9 @@
     "@deepkit/app": "^1.0.1-alpha.141",
     "@deepkit/logger": "^1.0.1-alpha.141",
     "@deepkit/type": "^1.0.1-alpha.141"
+  },
+  "peerDependencies": {
+    "rxjs": "*"
   },
   "jest": {
     "transform": {
