@@ -1,8 +1,8 @@
-import {createModule, onAppShutdown} from '@deepkit/app';
-import {PyBridgeConfig} from "./config.js";
-import {PyBridge} from "./bridge.js";
+import { createModuleClass, onAppShutdown } from '@deepkit/app';
+import { PyBridgeConfig } from "./config.js";
+import { PyBridge } from "./bridge.js";
 
-export class PyBridgeModule extends createModule({
+export class PyBridgeModule extends createModuleClass({
     config: PyBridgeConfig,
     providers: [
         PyBridge,
